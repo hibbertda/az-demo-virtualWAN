@@ -44,7 +44,9 @@ module "firewall" {
 }
 
 
-# resource "azurerm_virtual_hub_route_table" "hbrtInternet" {
-#   name           = "defaultRouteTable"
-#   virtual_hub_id = module.virtualWan.vhub-id
+# module "fwRules" {
+#     source = "./modules/firewall_rules"
+#     env = var.env
+#     rgName = module.resourceGroups.vwan-rg
+#     azfw-name = module.firewall.azfw-name
 # }

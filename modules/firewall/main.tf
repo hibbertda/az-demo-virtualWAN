@@ -27,6 +27,22 @@ resource "azurerm_firewall_policy_rule_collection_group" "fwHubPol-defaultPolCol
   name               = "fwpolicy-rcg-${var.env["name"]}"
   firewall_policy_id = azurerm_firewall_policy.fwHubPol.id
   priority           = 500
+
+  application_rule_collection {
+    name  = "example-application-Rule"
+    priority = 1000
+    action = "Deny"
+    rule {
+      name  = "rule1"
+      protocols {
+        type = "Https"
+        port  = 443
+      }
+      source_addresses = [ "10.1.0.0/16" ]
+      destination_fqdns = [ "*.microsoft.com" ]
+    }
+  }
+
 }
 
 # Deploy Azure Firewall
@@ -47,6 +63,11 @@ resource "azurerm_resource_group_template_deployment" "azfw_template_deployment"
   })
 }
 
+data "azurerm_firewall" "azfw" {
+  name = "azfw-${var.env["name"]}"
+  resource_group_name = var.rgName
+}
+
 # Virtual Hub Route Table
 resource "azurerm_virtual_hub_route_table" "hbrtInternet" {
 name                = "demoDefaultRT"
@@ -59,7 +80,8 @@ name                = "demoDefaultRT"
     destinations_type = "CIDR"
     destinations      = ["0.0.0.0/0"] 
     next_hop_type     = "ResourceId"
-    next_hop          = jsondecode(azurerm_resource_group_template_deployment.azfw_template_deployment.output_content).azFwID.value
+    next_hop          = data.azurerm_firewall.azfw.id
+    # next_hop          = jsondecode(azurerm_resource_group_template_deployment.azfw_template_deployment.output_content).azFwID.value
   }
   # Force traffic to 'destinations' CIDR throught Azure Firewall
    route {
@@ -67,7 +89,8 @@ name                = "demoDefaultRT"
     destinations_type = "CIDR"
     destinations      = ["10.2.0.0/16"] 
     next_hop_type     = "ResourceId"
-    next_hop          = jsondecode(azurerm_resource_group_template_deployment.azfw_template_deployment.output_content).azFwID.value    
+    next_hop          = data.azurerm_firewall.azfw.id
+    # next_hop          = jsondecode(azurerm_resource_group_template_deployment.azfw_template_deployment.output_content).azFwID.value    
    }
 }
 
@@ -95,23 +118,12 @@ resource "azurerm_virtual_hub_connection" "vhub-vnet1" {
 
 }
 
-
-
-
-
-# module "fwRules" {
-#     source = "./rules"
-#     env = var.env
-#     rgname = var.rgName 
-#     azfwName =    
-# }
-
-
-
-
-
 # Output - Policy Group resource ID
 output "default-policyGroup" {
     value = azurerm_firewall_policy_rule_collection_group.fwHubPol-defaultPolCol.id
 }
 
+# Output - Azure Firewall ID
+output "azfw-name" {
+  value = "azfw-${var.env["name"]}"
+}

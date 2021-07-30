@@ -1,3 +1,20 @@
+variable "env" {
+    type = map
+}
+
+variable "rgvnet1" {
+  type = string
+}
+
+variable "rgvnet2" {
+  type = string
+}
+
+variable "vhub-id" {
+  type = string
+}
+
+
 resource "azurerm_virtual_network" "vnet1" {
   name                = "vnet-${var.env["name"]}-01"
   location            = var.env["region"]
@@ -14,12 +31,6 @@ resource "azurerm_virtual_network" "vnet1" {
     address_prefix = "10.1.100.0/27"
   }
 }
-
-# resource "azurerm_virtual_hub_connection" "vhub-vnet1" {
-#   name                      = "example-vhub"
-#   virtual_hub_id            = var.vhub-id
-#   remote_virtual_network_id = azurerm_virtual_network.vnet1.id
-# }
 
 # Output the VNET ID
 output "vnet1-id" {

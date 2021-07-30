@@ -1,0 +1,65 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "azFwName": {
+            "type": "string",
+            "metadata": {
+                "description": "Azure Firewall Name"
+            }
+        },
+        "vhubID": {
+            "type": "string",
+            "metadata": {
+                "description": "Virtual Hub ID"
+            }
+        },
+        "fwPolicyID": {
+            "type": "string",
+            "metadata": {
+                "description": "Azure Firewall Policy ID"
+            }
+        },
+        "publicIPCount": {
+            "type": "int",
+            "metadata": {
+                "description": "Count of Public Ip Address for Azure Firewall"
+            },
+            "defaultValue": 1
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "name": "[parameters('azFwName')]",
+            "type": "Microsoft.Network/azureFirewalls",
+            "apiVersion": "2020-04-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+            },
+            "properties": {
+                "sku": {
+                    "name": "AZFW_Hub",
+                    "tier": "Standard"
+                },
+                "hubIPAddresses":{
+                    "publicIPs": {
+                        "count": "[parameters('publicIPCount')]"
+                    }
+                },
+                "virtualHub": {
+                    "id": "[parameters('vhubID')]"
+                },
+                "firewallPolicy": {
+                    "id": "[parameters('fwPolicyID')]"
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "azFwID": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/azureFirewalls', parameters('azFwName'))]"
+        }
+    }
+}

@@ -1,3 +1,19 @@
+variable "env" {
+    type = map
+}
+
+variable "rgName" {
+  type = string
+}
+
+variable "vhub-id" {
+  type = string
+}
+
+variable "vnet1-id" {
+  type = string
+}
+
 # Azure Firewall Policy - Applied to Secure Virtual Hub
 resource "azurerm_firewall_policy" "fwHubPol" {
   name                = "fwpolicy-${var.env["name"]}"
@@ -49,7 +65,7 @@ name                = "demoDefaultRT"
    route {
     name              = "local_traffic"
     destinations_type = "CIDR"
-    destinations      = ["10.1.2.0/16"] 
+    destinations      = ["10.2.0.0/16"] 
     next_hop_type     = "ResourceId"
     next_hop          = jsondecode(azurerm_resource_group_template_deployment.azfw_template_deployment.output_content).azFwID.value    
    }

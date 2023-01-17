@@ -46,27 +46,31 @@ resource "azurerm_firewall_policy_rule_collection_group" "fwHubPol-defaultPolCol
 }
 
 # Deploy Azure Firewall
-# -- Ran into issue with deploying the Firewall with Terraform using the 'AZFW_HUB' sku.
-# -- Resulting in an API error from Azure. To get around this the Firewall is deployed with an ARM template. 
-resource "azurerm_resource_group_template_deployment" "azfw_template_deployment" {
-  name                      = "azFW-hub-deployment"
-  resource_group_name       = var.rgName
-  
-  deployment_mode           = "Incremental"
-  template_content          = file("./modules/firewall/arm/azfw-hub.azrm.json")
-  
- # ARM Template parameters
-  parameters_content = jsonencode({
-    azFwName                = { value = "azfw-${var.env["name"]}" }
-    vhubid                  = { value = var.vhub-id }
-    fwPolicyID              = { value = azurerm_firewall_policy.fwHubPol.id }
-  })
+resource "azurerm_firewall" "azfw" {
+  name                = "azfw-${var.env["name"]}"
+  location            = var.env["region"]
+  resource_group_name = var.rgName
+
+  sku_name            = "AZFW_Hub"
+  sku_tier            = "Standard"
+
+  firewall_policy_id  = azurerm_firewall_policy.fwHubPol.id
+
+  virtual_hub {
+    virtual_hub_id    = var.vhub-id
+    public_ip_count   = 1
+  }  
 }
 
-data "azurerm_firewall" "azfw" {
-  name = "azfw-${var.env["name"]}"
-  resource_group_name = var.rgName
-}
+
+
+# data "azurerm_firewall" "azfw" {
+#   # depends_on = [
+#   #   azurerm_resource_group_tempate_deployment.azfw_template_deployment
+#   # ]
+#   name = "azfw-${var.env["name"]}"
+#   resource_group_name = var.rgName
+# }
 
 # Virtual Hub Route Table
 resource "azurerm_virtual_hub_route_table" "hbrtInternet" {
@@ -80,7 +84,7 @@ name                = "demoDefaultRT"
     destinations_type = "CIDR"
     destinations      = ["0.0.0.0/0"] 
     next_hop_type     = "ResourceId"
-    next_hop          = data.azurerm_firewall.azfw.id
+    next_hop          = dazurerm_firewall.azfw.id
     # next_hop          = jsondecode(azurerm_resource_group_template_deployment.azfw_template_deployment.output_content).azFwID.value
   }
   # Force traffic to 'destinations' CIDR throught Azure Firewall
